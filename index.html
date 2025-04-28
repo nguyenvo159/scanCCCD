@@ -14,8 +14,10 @@
     <div class="d-flex justify-content-center mb-3">
       <button id="startBtn" class="btn btn-success me-2">Bật camera</button>
       <button id="stopBtn" class="btn btn-danger me-2">Tắt camera</button>
+      <button id="uploadBtn" class="btn btn-warning me-2">Upload ảnh QR</button>
       <button id="copyAllBtn" class="btn btn-primary d-none">Copy tất cả</button>
     </div>
+    <input type="file" id="fileInput" accept="image/*" class="d-none">
 
     <div id="reader" style="width: 100%; max-width: 500px; margin: auto;"></div>
 
@@ -47,6 +49,32 @@
     const fieldLabels = [
       "Số CCCD", "Số CMND cũ", "Họ và tên", "Ngày sinh", "Giới tính", "Địa chỉ", "Ngày cấp"
     ];
+
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('fileInput');
+
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click(); 
+    });
+
+    fileInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const imgDataUrl = e.target.result;
+        const html5QrCode = new Html5Qrcode("reader");
+        fieldsContainer.innerHTML = "";
+
+        html5QrCode.scanFile(file, true)
+          .then(decodedText => {
+            onScanSuccess(decodedText);
+          })
+        
+      };
+      reader.readAsDataURL(file);
+    });
 
     function formatDate(dateStr) {
       if (dateStr.length !== 8) return dateStr;
@@ -123,7 +151,11 @@
         if (devices && devices.length) {
           html5QrcodeScanner.start(
             devices[0].id,
-            { fps: 10, qrbox: 250 },
+            { 
+              fps: 15, 
+              qrbox: 250, 
+              videoConstraints: { facingMode: "environment" },
+              useBarCodeDetectorIfSupported: true  },
             onScanSuccess
           );
         }
